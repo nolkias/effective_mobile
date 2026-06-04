@@ -1,15 +1,19 @@
-# Техническое задание [Отдельный файл](./LESSON.md)
-# Инутрукция для работы с проектом  
+# Техническое задание
 
+[Отдельный файл](./LESSON.md)
 
+# Инструкция для работы с проектом
 
-## Подготовка проекта к работе 
+## Подготовка проекта к работе
 
-- ### Создаем переменные окруджения 
+### Создаем переменные окружения
+
 ```text
 .env.example -> .env
 ```
-- ### Сбираем и запускаем контейнеры 
+
+### Собираем и запускаем контейнеры
+
 ```text
 docker compose up --build -d
 ```
@@ -22,19 +26,20 @@ docker compose up --build -d
 
 http://localhost:8080/swagger/index.html
 
-
-## Документация для работы с API 
-
+---
 
 ## API Endpoints
 
 Базовый URL: `http://localhost:8080/api/v1`
+
+---
 
 ### 1. Добавление подписки (Create)
 
 **Endpoint:** `POST /subscriptions`
 
 **Request body:**
+
 ```json
 {
   "service_name": "Yandex Plus",
@@ -43,15 +48,19 @@ http://localhost:8080/swagger/index.html
   "start_date": "07-2025",
   "end_date": null
 }
-Поле	Тип	Обязательное	Описание
-service_name	string	Да	Название сервиса
-price	integer	Да	Стоимость в рублях (целое число)
-user_id	string (UUID)	Да	ID пользователя в формате UUID
-start_date	string	Да	Дата начала в формате MM-YYYY
-end_date	string	Нет	Дата окончания в формате MM-YYYY
-Response (201 Created):
+```
 
-json
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| service_name | string | Да | Название сервиса |
+| price | integer | Да | Стоимость в рублях (целое число) |
+| user_id | string (UUID) | Да | ID пользователя в формате UUID |
+| start_date | string | Да | Дата начала в формате MM-YYYY |
+| end_date | string | Нет | Дата окончания в формате MM-YYYY |
+
+**Response (201 Created):**
+
+```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "service_name": "Yandex Plus",
@@ -62,14 +71,19 @@ json
   "created_at": "2025-06-04T10:00:00Z",
   "updated_at": "2025-06-04T10:00:00Z"
 }
-2. Получение подписки по ID (Read)
-Endpoint: GET /subscriptions/{id}
+```
 
-Пример: GET /subscriptions/550e8400-e29b-41d4-a716-446655440000
+---
 
-Response (200 OK):
+### 2. Получение подписки по ID (Read)
 
-json
+**Endpoint:** `GET /subscriptions/{id}`
+
+**Пример:** `GET /subscriptions/550e8400-e29b-41d4-a716-446655440000`
+
+**Response (200 OK):**
+
+```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "service_name": "Yandex Plus",
@@ -80,27 +94,33 @@ json
   "created_at": "2025-06-04T10:00:00Z",
   "updated_at": "2025-06-04T10:00:00Z"
 }
-Ошибки:
+```
 
-404 Not Found — подписка с таким ID не найдена
+**Ошибки:**
 
-400 Bad Request — некорректный формат UUID
+- `404 Not Found` — подписка с таким ID не найдена
+- `400 Bad Request` — некорректный формат UUID
 
-3. Обновление подписки (Update)
-Endpoint: PUT /subscriptions/{id}
+---
 
-Пример: PUT /subscriptions/550e8400-e29b-41d4-a716-446655440000
+### 3. Обновление подписки (Update)
 
-Request body (обновляются только переданные поля):
+**Endpoint:** `PUT /subscriptions/{id}`
 
-json
+**Пример:** `PUT /subscriptions/550e8400-e29b-41d4-a716-446655440000`
+
+**Request body** (обновляются только переданные поля):
+
+```json
 {
   "price": 450,
   "end_date": "12-2026"
 }
-Response (200 OK):
+```
 
-json
+**Response (200 OK):**
+
+```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
   "service_name": "Yandex Plus",
@@ -111,24 +131,30 @@ json
   "created_at": "2025-06-04T10:00:00Z",
   "updated_at": "2025-06-04T10:30:00Z"
 }
-Ошибки:
+```
 
-404 Not Found — подписка не найдена
+**Ошибки:**
 
-400 Bad Request — некорректные данные
+- `404 Not Found` — подписка не найдена
+- `400 Bad Request` — некорректные данные
 
-4. Удаление подписки (Delete)
-Endpoint: DELETE /subscriptions/{id}
+---
 
-Пример: DELETE /subscriptions/550e8400-e29b-41d4-a716-446655440000
+### 4. Удаление подписки (Delete)
 
-Response (204 No Content) — тело ответа пустое
+**Endpoint:** `DELETE /subscriptions/{id}`
 
-Ошибки:
+**Пример:** `DELETE /subscriptions/550e8400-e29b-41d4-a716-446655440000`
 
-404 Not Found — подписка не найдена
+**Response:** `204 No Content` — тело ответа пустое
 
-5. Список всех подписок (List)
+**Ошибки:**
+
+- `404 Not Found` — подписка не найдена
+
+---
+
+### 5. Список всех подписок (List)
 
 **Endpoint:** `GET /subscriptions/list`
 
@@ -153,13 +179,11 @@ curl -X GET "http://localhost:8080/api/v1/subscriptions/list?limit=10&offset=10"
 
 # Свои значения лимита и смещения
 curl -X GET "http://localhost:8080/api/v1/subscriptions/list?limit=50&offset=100"
-Примеры запросов:
+```
 
-text
-GET /subscriptions
-Response (200 OK):
+**Response (200 OK):**
 
-json
+```json
 {
   "data": [
     {
@@ -180,20 +204,26 @@ json
     }
   ]
 }
-6. Подсчёт стоимости подписок за период (Дополнительная ручка)
-Endpoint: GET /subscriptions/total-cost
+```
 
-Параметры запроса:
+---
 
-Параметр	Тип	Обязательный	Описание
-user_id	string (UUID)	Нет	Фильтр по ID пользователя
-service_name	string	Нет	Фильтр по названию сервиса
-start_date	string	Да	Начало периода (MM-YYYY)
-end_date	string	Да	Конец периода (MM-YYYY)
+### 6. Подсчёт стоимости подписок за период
 
-Примеры запросов:
+**Endpoint:** `GET /subscriptions/total-cost`
 
-text
+**Параметры запроса:**
+
+| Параметр | Тип | Обязательный | Описание |
+|----------|-----|--------------|----------|
+| user_id | string (UUID) | Нет | Фильтр по ID пользователя |
+| service_name | string | Нет | Фильтр по названию сервиса |
+| start_date | string | Да | Начало периода (MM-YYYY) |
+| end_date | string | Да | Конец периода (MM-YYYY) |
+
+**Примеры запросов:**
+
+```bash
 # Все подписки за период
 GET /subscriptions/total-cost?start_date=01-2025&end_date=12-2025
 
@@ -205,9 +235,11 @@ GET /subscriptions/total-cost?service_name=Yandex Plus&start_date=01-2025&end_da
 
 # Комбинированная фильтрация
 GET /subscriptions/total-cost?user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba&service_name=Yandex Plus&start_date=01-2025&end_date=12-2025
-Response (200 OK):
+```
 
-json
+**Response (200 OK):**
+
+```json
 {
   "total_cost": 12500,
   "period": {
@@ -220,14 +252,21 @@ json
   },
   "subscriptions_count": 3
 }
-Поле	Описание
-total_cost	Суммарная стоимость всех подписок за указанный период
-period	Запрошенный период
-filters	Применённые фильтры (если указаны)
+```
 
-Примеры запросов с cURL
-Создание подписки
-bash
+| Поле | Описание |
+|------|----------|
+| total_cost | Суммарная стоимость всех подписок за указанный период |
+| period | Запрошенный период |
+| filters | Применённые фильтры (если указаны) |
+
+---
+
+## Примеры запросов с cURL
+
+### Создание подписки
+
+```bash
 curl -X POST http://localhost:8080/api/v1/subscriptions \
   -H "Content-Type: application/json" \
   -d '{
@@ -236,30 +275,50 @@ curl -X POST http://localhost:8080/api/v1/subscriptions \
     "user_id": "60601fee-2bf1-4721-ae6f-7636e79a0cba",
     "start_date": "07-2025"
   }'
-Получение всех подписок
-bash
+```
+
+### Получение всех подписок
+
+```bash
 curl -X GET http://localhost:8080/api/v1/subscriptions/list
-Получение подписки по ID
-bash
+```
+
+### Получение подписки по ID
+
+```bash
 curl -X GET http://localhost:8080/api/v1/subscriptions/550e8400-e29b-41d4-a716-446655440000
-Обновление подписки
-bash
+```
+
+### Обновление подписки
+
+```bash
 curl -X PUT http://localhost:8080/api/v1/subscriptions/550e8400-e29b-41d4-a716-446655440000 \
   -H "Content-Type: application/json" \
   -d '{"price": 450}'
-Удаление подписки
-bash
+```
+
+### Удаление подписки
+
+```bash
 curl -X DELETE http://localhost:8080/api/v1/subscriptions/550e8400-e29b-41d4-a716-446655440000
-Подсчёт стоимости за период
-bash
+```
+
+### Подсчёт стоимости за период
+
+```bash
 curl -X GET "http://localhost:8080/api/v1/subscriptions/total-cost?start_date=01-2025&end_date=12-2025&user_id=60601fee-2bf1-4721-ae6f-7636e79a0cba"
-HTTP статус-коды
-Код	Описание
-200	Успешный запрос (GET, PUT)
-201	Успешное создание (POST)
-204	Успешное удаление (DELETE)
-400	Некорректный запрос (невалидные данные)
-404	Ресурс не найден
-405	Метод не поддерживается
-500	Внутренняя ошибка сервера
-text
+```
+
+---
+
+## HTTP статус-коды
+
+| Код | Описание |
+|-----|----------|
+| 200 | Успешный запрос (GET, PUT) |
+| 201 | Успешное создание (POST) |
+| 204 | Успешное удаление (DELETE) |
+| 400 | Некорректный запрос (невалидные данные) |
+| 404 | Ресурс не найден |
+| 405 | Метод не поддерживается |
+| 500 | Внутренняя ошибка сервера |
