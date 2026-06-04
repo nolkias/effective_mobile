@@ -19,7 +19,7 @@ docker compose up --build -d
 
 Базовый URL: `http://localhost:8080/api/v1`
 
-### 1. Создание подписки (Create)
+### 1. Добавление подписки (Create)
 
 **Endpoint:** `POST /subscriptions`
 
@@ -118,19 +118,34 @@ Response (204 No Content) — тело ответа пустое
 404 Not Found — подписка не найдена
 
 5. Список всех подписок (List)
-Endpoint: GET /subscriptions
 
-Параметры пагинации (опционально):
+**Endpoint:** `GET /subscriptions/list`
 
-Параметр	Тип	По умолчанию	Описание
-limit	integer	20	Количество записей на странице
-offset	integer	0	Смещение для пагинации
+**Параметры пагинации (опционально):**
+
+| Параметр | Тип | По умолчанию | Описание |
+|----------|-----|--------------|----------|
+| limit | integer | 20 | Количество записей на странице (макс. 100) |
+| offset | integer | 0 | Смещение для пагинации |
+
+**Примеры запросов:**
+
+```bash
+# Без пагинации (вернёт первые 20 записей)
+curl -X GET http://localhost:8080/api/v1/subscriptions/list
+
+# Первая страница, 10 записей
+curl -X GET "http://localhost:8080/api/v1/subscriptions/list?limit=10&offset=0"
+
+# Вторая страница, 10 записей
+curl -X GET "http://localhost:8080/api/v1/subscriptions/list?limit=10&offset=10"
+
+# Свои значения лимита и смещения
+curl -X GET "http://localhost:8080/api/v1/subscriptions/list?limit=50&offset=100"
 Примеры запросов:
 
 text
 GET /subscriptions
-GET /subscriptions?limit=10&offset=0
-GET /subscriptions?limit=50&offset=100
 Response (200 OK):
 
 json
@@ -152,12 +167,7 @@ json
       "start_date": "01-2025",
       "end_date": "06-2025"
     }
-  ],
-  "pagination": {
-    "limit": 20,
-    "offset": 0,
-    "total": 2
-  }
+  ]
 }
 6. Подсчёт стоимости подписок за период (Дополнительная ручка)
 Endpoint: GET /subscriptions/total-cost
@@ -169,7 +179,6 @@ user_id	string (UUID)	Нет	Фильтр по ID пользователя
 service_name	string	Нет	Фильтр по названию сервиса
 start_date	string	Да	Начало периода (MM-YYYY)
 end_date	string	Да	Конец периода (MM-YYYY)
-Важно: Учитываются подписки, у которых период действия пересекается с запрошенным интервалом. Для бессрочных подписок (end_date = null) считается, что они действуют бесконечно.
 
 Примеры запросов:
 
@@ -204,7 +213,7 @@ json
 total_cost	Суммарная стоимость всех подписок за указанный период
 period	Запрошенный период
 filters	Применённые фильтры (если указаны)
-subscriptions_count	Количество подписок, участвовавших в расчёте
+
 Примеры запросов с cURL
 Создание подписки
 bash
@@ -218,7 +227,7 @@ curl -X POST http://localhost:8080/api/v1/subscriptions \
   }'
 Получение всех подписок
 bash
-curl -X GET http://localhost:8080/api/v1/subscriptions?limit=10&offset=0
+curl -X GET http://localhost:8080/api/v1/subscriptions/list
 Получение подписки по ID
 bash
 curl -X GET http://localhost:8080/api/v1/subscriptions/550e8400-e29b-41d4-a716-446655440000

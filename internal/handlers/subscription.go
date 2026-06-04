@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"net/http"
+	"strconv"
 )
 
 type SubscriptionHandler struct {
@@ -16,6 +17,17 @@ func NewSubscriptionHandler(s *service.SubscriptionService) *SubscriptionHandler
 	return &SubscriptionHandler{service: s}
 }
 
+// Create создаёт новую подписку
+// @Summary Создать подписку
+// @Description Создаёт новую подписку для пользователя
+// @Tags Subscriptions
+// @Accept json
+// @Produce json
+// @Param request body models.Subscription true "Данные подписки"
+// @Success 201 {object} models.Subscription
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions [post]
 func (h *SubscriptionHandler) Create(c *gin.Context) {
 	var req models.Subscription
 
@@ -34,6 +46,16 @@ func (h *SubscriptionHandler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, req)
 }
 
+// Get возвращает подписку по ID
+// @Summary Получить подписку
+// @Description Возвращает подписку по её ID
+// @Tags Subscriptions
+// @Produce json
+// @Param id path string true "ID подписки (UUID)"
+// @Success 200 {object} models.Subscription
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions/{id} [get]
 func (h *SubscriptionHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 
@@ -50,16 +72,63 @@ func (h *SubscriptionHandler) Get(c *gin.Context) {
 	c.JSON(http.StatusOK, sub)
 }
 
+// GetList возвращает список всех подписок
+// @Summary Список подписок
+// @Description Возвращает список всех подписок
+// @Tags Subscriptions
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions/list [get]
 func (h *SubscriptionHandler) GetList(c *gin.Context) {
-	subs, err := h.service.GetList()
+	// Читаем параметры пагинации
+	limitStr := c.DefaultQuery("limit", "20")
+	offsetStr := c.DefaultQuery("offset", "0")
+
+	limit, err := strconv.Atoi(limitStr)
+	if err != nil || limit < 1 {
+		limit = 20
+	}
+
+	offset, err := strconv.Atoi(offsetStr)
+	if err != nil || offset < 0 {
+		offset = 0
+	}
+
+	// Ограничим максимальный лимит
+	if limit > 100 {
+		limit = 100
+	}
+
+	subs, total, err := h.service.GetList(limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": subs})
+	c.JSON(http.StatusOK, gin.H{
+		"data": subs,
+		"pagination": gin.H{
+			"limit":  limit,
+			"offset": offset,
+			"total":  total,
+		},
+	})
 }
 
+// Update обновляет существующую подписку
+// @Summary Обновить подписку
+// @Description Обновляет поля существующей подписки
+// @Tags Subscriptions
+// @Accept json
+// @Produce json
+// @Param id path string true "ID подписки (UUID)"
+// @Param request body models.Subscription true "Данные для обновления"
+// @Success 200 {object} models.Subscription
+// @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions/{id} [put]
 func (h *SubscriptionHandler) Update(c *gin.Context) {
 	id := c.Param("id")
 
@@ -107,6 +176,16 @@ func (h *SubscriptionHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, existing)
 }
 
+// Delete удаляет подписку
+// @Summary Удалить подписку
+// @Description Удаляет подписку по ID
+// @Tags Subscriptions
+// @Produce json
+// @Param id path string true "ID подписки (UUID)"
+// @Success 204 "No Content"
+// @Failure 404 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions/{id} [delete]
 func (h *SubscriptionHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
@@ -118,6 +197,19 @@ func (h *SubscriptionHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusNoContent, nil)
 }
 
+// TotalCost подсчитывает стоимость подписок за период
+// @Summary Подсчёт стоимости
+// @Description Подсчитывает суммарную стоимость подписок за указанный период с фильтрацией
+// @Tags Subscriptions
+// @Produce json
+// @Param start_date query string true "Начало периода (MM-YYYY)"
+// @Param end_date query string true "Конец периода (MM-YYYY)"
+// @Param user_id query string false "ID пользователя (UUID)"
+// @Param service_name query string false "Название сервиса"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /subscriptions/total-cost [get]
 func (h *SubscriptionHandler) TotalCost(c *gin.Context) {
 	startDate := c.Query("start_date")
 	endDate := c.Query("end_date")

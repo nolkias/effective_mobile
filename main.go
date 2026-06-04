@@ -9,6 +9,11 @@ import (
 	"log"
 )
 
+// @title Subscription Service API
+// @version 1.0
+// @description API для управления подписками пользователей
+// @host localhost:8080
+// @BasePath /api/v1
 func main() {
 	// Создаем Подключение к бд
 	db, err := database.DbConnection()

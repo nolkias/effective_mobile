@@ -25,8 +25,8 @@ func (s *SubscriptionService) Get(id string) (*models.Subscription, error) {
 	return s.repo.Get(id)
 }
 
-func (s *SubscriptionService) GetList() ([]*models.Subscription, error) {
-	return s.repo.GetList()
+func (s *SubscriptionService) GetList(limit, offset int) ([]*models.Subscription, int, error) {
+	return s.repo.GetList(limit, offset)
 }
 
 func (s *SubscriptionService) Delete(id string) error {

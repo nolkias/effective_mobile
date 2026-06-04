@@ -1,0 +1,220 @@
+basePath: /api/v1
+definitions:
+  models.Subscription:
+    properties:
+      created_at:
+        type: string
+      end_date:
+        type: string
+      id:
+        type: string
+      price:
+        type: number
+      service_name:
+        type: string
+      start_date:
+        type: string
+      updated_at:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API для управления подписками пользователей
+  title: Subscription Service API
+  version: "1.0"
+paths:
+  /subscriptions:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новую подписку для пользователя
+      parameters:
+      - description: Данные подписки
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Subscription'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Создать подписку
+      tags:
+      - Subscriptions
+  /subscriptions/{id}:
+    delete:
+      description: Удаляет подписку по ID
+      parameters:
+      - description: ID подписки (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Удалить подписку
+      tags:
+      - Subscriptions
+    get:
+      description: Возвращает подписку по её ID
+      parameters:
+      - description: ID подписки (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получить подписку
+      tags:
+      - Subscriptions
+    put:
+      consumes:
+      - application/json
+      description: Обновляет поля существующей подписки
+      parameters:
+      - description: ID подписки (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Данные для обновления
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Subscription'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Subscription'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Обновить подписку
+      tags:
+      - Subscriptions
+  /subscriptions/list:
+    get:
+      description: Возвращает список всех подписок
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Список подписок
+      tags:
+      - Subscriptions
+  /subscriptions/total-cost:
+    get:
+      description: Подсчитывает суммарную стоимость подписок за указанный период с
+        фильтрацией
+      parameters:
+      - description: Начало периода (MM-YYYY)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Конец периода (MM-YYYY)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: ID пользователя (UUID)
+        in: query
+        name: user_id
+        type: string
+      - description: Название сервиса
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Подсчёт стоимости
+      tags:
+      - Subscriptions
+swagger: "2.0"

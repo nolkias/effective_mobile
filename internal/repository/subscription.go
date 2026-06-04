@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"effective_mobile/internal/models"
 	"errors"
+	"fmt"
 )
 
 // Scannable Для универсальности, чтобы не плодить для двух методов
@@ -77,30 +78,38 @@ func (r *SubscriptionRepository) Get(id string) (*models.Subscription, error) {
 	return result, nil
 }
 
-func (r *SubscriptionRepository) GetList() ([]*models.Subscription, error) {
-	list := make([]*models.Subscription, 0)
-	query := `SELECT id, service_name, price, user_id, start_date, end_date, created_at, updated_at FROM subscriptions`
-
-	rows, err := r.db.Query(query)
+// GetList Миграции н е было в тз, но добавил, чтобы показать что могу)
+func (r *SubscriptionRepository) GetList(limit, offset int) ([]*models.Subscription, int, error) {
+	// Считаем общее количество
+	var total int
+	countQuery := `SELECT COUNT(*) FROM subscriptions`
+	err := r.db.QueryRow(countQuery).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	// Получаем записи с пагинацией
+	query := `SELECT id, service_name, price, user_id, start_date, end_date, created_at, updated_at 
+              FROM subscriptions
+              ORDER BY created_at DESC
+              LIMIT $1 OFFSET $2`
+
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
+	var list []*models.Subscription
 	for rows.Next() {
 		sub, err := toDTO(rows)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
-
 		list = append(list, sub)
 	}
 
-	if err = rows.Err(); err != nil {
-		return nil, err
-	}
-
-	return list, nil
+	return list, total, rows.Err()
 }
 
 func (r *SubscriptionRepository) Delete(id string) error {
@@ -113,12 +122,21 @@ func (r *SubscriptionRepository) TotalCost(startDate, endDate, userID, serviceNa
 	query := `SELECT COALESCE(SUM(price), 0)
               FROM subscriptions
               WHERE (end_date IS NULL OR end_date >= $1)
-                AND start_date <= $2
-                AND user_id = $3
-                AND service_name = $4`
+                AND start_date <= $2`
+
+	args := []interface{}{startDate, endDate}
+
+	if userID != "" {
+		query += " AND user_id = $" + fmt.Sprintf("%d", len(args)+1)
+		args = append(args, userID)
+	}
+	if serviceName != "" {
+		query += " AND service_name = $" + fmt.Sprintf("%d", len(args)+1)
+		args = append(args, serviceName)
+	}
 
 	var total int
-	err := r.db.QueryRow(query, startDate, endDate, userID, serviceName).Scan(&total)
+	err := r.db.QueryRow(query, args...).Scan(&total)
 	return total, err
 }
 
