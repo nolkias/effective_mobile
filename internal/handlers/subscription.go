@@ -10,10 +10,10 @@ import (
 )
 
 type SubscriptionHandler struct {
-	service *service.SubscriptionService
+	service service.SubscriptionSvc
 }
 
-func NewSubscriptionHandler(s *service.SubscriptionService) *SubscriptionHandler {
+func NewSubscriptionHandler(s service.SubscriptionSvc) *SubscriptionHandler {
 	return &SubscriptionHandler{service: s}
 }
 
@@ -38,7 +38,7 @@ func (h *SubscriptionHandler) Create(c *gin.Context) {
 
 	req.ID = uuid.New()
 
-	if err := h.service.Create(&req); err != nil {
+	if err := h.service.Create(c.Request.Context(), &req); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -59,7 +59,7 @@ func (h *SubscriptionHandler) Create(c *gin.Context) {
 func (h *SubscriptionHandler) Get(c *gin.Context) {
 	id := c.Param("id")
 
-	sub, err := h.service.Get(id)
+	sub, err := h.service.Get(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -77,11 +77,12 @@ func (h *SubscriptionHandler) Get(c *gin.Context) {
 // @Description Возвращает список всех подписок
 // @Tags Subscriptions
 // @Produce json
+// @Param limit query int false "Лимит (по умолчанию 20, максимум 100)"
+// @Param offset query int false "Смещение (по умолчанию 0)"
 // @Success 200 {object} map[string]interface{}
 // @Failure 500 {object} map[string]interface{}
 // @Router /subscriptions/list [get]
 func (h *SubscriptionHandler) GetList(c *gin.Context) {
-	// Читаем параметры пагинации
 	limitStr := c.DefaultQuery("limit", "20")
 	offsetStr := c.DefaultQuery("offset", "0")
 
@@ -89,18 +90,16 @@ func (h *SubscriptionHandler) GetList(c *gin.Context) {
 	if err != nil || limit < 1 {
 		limit = 20
 	}
+	if limit > 100 {
+		limit = 100
+	}
 
 	offset, err := strconv.Atoi(offsetStr)
 	if err != nil || offset < 0 {
 		offset = 0
 	}
 
-	// Ограничим максимальный лимит
-	if limit > 100 {
-		limit = 100
-	}
-
-	subs, total, err := h.service.GetList(limit, offset)
+	subs, total, err := h.service.GetList(c.Request.Context(), limit, offset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -131,6 +130,7 @@ func (h *SubscriptionHandler) GetList(c *gin.Context) {
 // @Router /subscriptions/{id} [put]
 func (h *SubscriptionHandler) Update(c *gin.Context) {
 	id := c.Param("id")
+	ctx := c.Request.Context()
 
 	var req models.Subscription
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -138,7 +138,7 @@ func (h *SubscriptionHandler) Update(c *gin.Context) {
 		return
 	}
 
-	existing, err := h.service.Get(id)
+	existing, err := h.service.Get(ctx, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -151,24 +151,20 @@ func (h *SubscriptionHandler) Update(c *gin.Context) {
 	if req.ServiceName != "" {
 		existing.ServiceName = req.ServiceName
 	}
-
 	if req.Price != 0 {
 		existing.Price = req.Price
 	}
-
 	if req.UserID != uuid.Nil {
 		existing.UserID = req.UserID
 	}
-
 	if req.StartDate != "" {
 		existing.StartDate = req.StartDate
 	}
-
 	if req.EndDate != nil {
 		existing.EndDate = req.EndDate
 	}
 
-	if err := h.service.Update(existing); err != nil {
+	if err := h.service.Update(ctx, existing); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -189,8 +185,13 @@ func (h *SubscriptionHandler) Update(c *gin.Context) {
 func (h *SubscriptionHandler) Delete(c *gin.Context) {
 	id := c.Param("id")
 
-	if err := h.service.Delete(id); err != nil {
+	found, err := h.service.Delete(c.Request.Context(), id)
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if !found {
+		c.JSON(http.StatusNotFound, gin.H{"error": "subscription not found"})
 		return
 	}
 
@@ -199,7 +200,7 @@ func (h *SubscriptionHandler) Delete(c *gin.Context) {
 
 // TotalCost подсчитывает стоимость подписок за период
 // @Summary Подсчёт стоимости
-// @Description Подсчитывает суммарную стоимость подписок за указанный период с фильтрацией
+// @Description Подсчитывает суммарную стоимость подписок за указанный период с учётом количества месяцев
 // @Tags Subscriptions
 // @Produce json
 // @Param start_date query string true "Начало периода (MM-YYYY)"
@@ -221,9 +222,9 @@ func (h *SubscriptionHandler) TotalCost(c *gin.Context) {
 		return
 	}
 
-	total, err := h.service.TotalCost(startDate, endDate, userID, serviceName)
+	total, err := h.service.TotalCost(c.Request.Context(), startDate, endDate, userID, serviceName)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
